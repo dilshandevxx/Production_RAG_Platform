@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# .pre-commit-config.yaml
+#
+# WHY: Pre-commit hooks run automatically before every `git commit`.
+# They catch lint errors, type errors, and secret leaks BEFORE they reach the repo.
+# This is cheaper than fixing them in CI or, worse, in production.
+#
+# Setup: pip install pre-commit && pre-commit install
+# ─────────────────────────────────────────────────────────────────────────────
+
+repos:
+  # ─── Built-in hooks ──────────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace       # No trailing spaces — cosmetic but consistent
+      - id: end-of-file-fixer         # Files end with a newline
+      - id: check-yaml                # Validate YAML syntax (catches docker-compose mistakes)
+      - id: check-toml                # Validate TOML syntax (catches pyproject.toml mistakes)
+      - id: check-json                # Validate JSON
+      - id: check-merge-conflict      # Reject accidental merge conflict markers
+      - id: check-added-large-files   # Reject files > 500KB (datasets go to S3, not git)
+        args: ["--maxkb=500"]
+      - id: detect-private-key        # CRITICAL: reject any committed private keys
+      - id: no-commit-to-branch       # Protect main branch from direct pushes
+        args: ["--branch", "main"]
+
+  # ─── Secret scanning ─────────────────────────────────────────────────────────
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+        # WHY: Catches API keys, passwords, tokens accidentally committed.
+        # This is the most important security hook.
+
+  # ─── Ruff: lint + format (replaces flake8, isort, black) ────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff                      # Lint
+        args: ["--fix"]               # Auto-fix safe issues
+      - id: ruff-format               # Format (replaces black)
+
+  # ─── Type checking ───────────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - pydantic>=2.8.0
+          - types-redis
+          - types-passlib
+        args: ["--config-file=pyproject.toml"]

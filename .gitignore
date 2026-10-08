@@ -1,0 +1,72 @@
+# ─── SECRETS — never commit ───────────────────────────────────────────────────
+.env
+.env.*
+!.env.example          # the ONLY .env file allowed in git
+*.pem
+*.key
+secrets/
+
+# ─── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+eggs/
+.eggs/
+*.egg-info/
+*.egg
+MANIFEST
+.venv/
+venv/
+env/
+ENV/
+pip-wheel-metadata/
+
+# ─── Type checking & coverage ────────────────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# ─── Editors ─────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Docker ──────────────────────────────────────────────────────────────────
+# (docker-compose.yml IS committed; local overrides are not)
+docker-compose.override.yml
+
+# ─── Terraform ───────────────────────────────────────────────────────────────
+*.tfstate
+*.tfstate.backup
+.terraform/
+*.tfvars
+!*.tfvars.example
+
+# ─── Local data volumes (dev only) ───────────────────────────────────────────
+.docker-data/
+pgdata/
+redis-data/
+minio-data/
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Notebooks (scratchpads only — don't commit exploratory notebooks) ────────
+*.ipynb
+.ipynb_checkpoints/
