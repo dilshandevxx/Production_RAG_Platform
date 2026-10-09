@@ -1,210 +1,133 @@
-# Production RAG Platform
+# Production RAG Platform 🚀
 
-> A production-grade Retrieval-Augmented Generation platform demonstrating end-to-end
-> AI systems engineering — from document ingestion and hybrid retrieval to evaluation,
-> security, observability, cloud deployment and scalability.
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)
 
----
+An industry-grade, highly scalable Retrieval-Augmented Generation (RAG) platform built with Python, FastAPI, and PostgreSQL (`pgvector`). This platform allows you to securely ingest private documents, convert them into mathematical vector embeddings using Google Gemini, and perform semantic vector searches to power an intelligent, context-aware AI chatbot.
 
-## What This Project Demonstrates
+## 🏗 Architecture
 
-This is not a chatbot demo. It is an engineering portfolio showing:
+The platform is designed using a **modular, domain-driven architecture** ensuring scalability, testability, and separation of concerns.
 
-| Competency | What's Built |
-|---|---|
-| **RAG internals** | Custom chunking strategies, hybrid retrieval (semantic + keyword), reranking, citation mapping |
-| **Backend engineering** | FastAPI, async processing, Pydantic validation, typed interfaces |
-| **Data engineering** | PostgreSQL schema design, pgvector indexes, Alembic migrations |
-| **Async systems** | Async ingestion worker, job queue, retries with exponential backoff, idempotency |
-| **Security** | Multi-tenancy, RBAC, prompt injection defenses, API key hashing, audit logging |
-| **Evaluation** | Retrieval metrics (Recall@K, MRR, NDCG), generation metrics (Faithfulness, Citation accuracy) |
-| **Observability** | OpenTelemetry traces, Prometheus metrics, Grafana dashboards, structured logs |
-| **Reliability** | Graceful failure, dependency degradation, failure scenario testing |
-| **DevOps** | Docker, CI/CD (GitHub Actions), Terraform, AWS deployment |
-| **Cost engineering** | Token tracking per request/tenant, cache savings measurement |
+- **Apps (`apps/api/`)**: Contains the FastAPI entrypoint, HTTP routers, and Pydantic schemas. It acts strictly as the transport layer.
+- **Services (`services/`)**: Contains the core business logic (Ingestion, Retrieval, Chat orchestration). Services are decoupled from the HTTP layer.
+- **Packages (`packages/`)**: Standalone internal libraries (Database management, LLM integrations, Vector Embeddings).
 
----
+## ✨ Features
 
-## Architecture
+- **Document Ingestion**: Automatically chunk large texts and generate 768-dimensional vector embeddings.
+- **Semantic Vector Search**: Utilizes `pgvector` for lightning-fast L2 distance mathematical similarity searches.
+- **Streaming LLM Responses**: Real-time server-sent events (SSE) streaming of AI responses using `gemini-2.5-flash`.
+- **Asynchronous by Default**: Built entirely on `asyncio`, utilizing `asyncpg` for non-blocking database transactions.
+- **Dockerized Infrastructure**: Complete local development environment bundled via `docker-compose` (PostgreSQL + Redis).
+- **Database Migrations**: Fully managed schema versioning using `Alembic`.
 
-```
-Client
-  │
-  ▼
-API Gateway / Reverse Proxy
-  │
-  ▼
-FastAPI Application (apps/api/)
-  ├── Auth & RBAC
-  ├── Document Service
-  ├── RAG Query Engine
-  ├── Evaluation Service
-  └── Usage/Analytics
-  │
-  ├──► PostgreSQL + pgvector  (metadata, chunks, vectors)
-  ├──► Redis                  (cache, rate limiting, job queue)
-  ├──► S3 / MinIO             (original document files)
-  └──► LLM / Embedding APIs   (OpenAI, Anthropic, Cohere)
-  │
-  ▼
-Ingestion Worker (services/worker/)
-  └── Parse → Clean → Chunk → Embed → Index
-```
+## 🛠 Tech Stack
 
-**Architecture Decision Records** — explaining every major design choice:
-- [ADR-001: Why Python + FastAPI?](docs/adr/ADR-001-python-fastapi.md)
-- [ADR-002: Why PostgreSQL + pgvector?](docs/adr/ADR-002-postgresql-pgvector.md) *(Phase 2)*
-- [ADR-003: Why hybrid retrieval?](docs/adr/ADR-003-hybrid-retrieval.md) *(Phase 5)*
-- [ADR-004: Why asynchronous ingestion?](docs/adr/ADR-004-async-ingestion.md) *(Phase 4)*
-- [ADR-005: Why Redis?](docs/adr/ADR-005-redis.md) *(Phase 4)*
+- **Backend Framework**: [FastAPI](https://fastapi.tiangolo.com/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) with [`pgvector`](https://github.com/pgvector/pgvector)
+- **ORM & Migrations**: [SQLAlchemy 2.0 (Async)](https://www.sqlalchemy.org/) & [Alembic](https://alembic.sqlalchemy.org/)
+- **AI / LLM**: [Google GenAI SDK](https://github.com/google/genai-python) (`gemini-2.5-flash`, `gemini-embedding-2`)
+- **Infrastructure**: Docker & Docker Compose
 
 ---
 
-## Technology Stack
-
-| Layer | Technology | Why |
-|---|---|---|
-| Backend | Python 3.12 + FastAPI | Async-native, Pydantic validation, AI ecosystem |
-| Database | PostgreSQL 16 + pgvector | Relational + vector in one system; avoids extra infra |
-| Cache/Queue | Redis 7 | Caching, rate limiting, job queue |
-| Object Storage | S3 / MinIO (local) | Large files off the DB; S3-compatible API |
-| LLM | OpenAI GPT-4o-mini (default) | Cost-effective; swappable via provider abstraction |
-| Embeddings | OpenAI text-embedding-3-small | Strong quality/cost ratio; 1536-dim vectors |
-| Reranking | Cohere Rerank | Cross-encoder quality; API-based, no GPU needed |
-| Tracing | OpenTelemetry → Jaeger | Industry standard; per-stage latency visibility |
-| Metrics | Prometheus + Grafana | Standard production monitoring stack |
-| CI/CD | GitHub Actions | Free for public repos; YAML-based, reproducible |
-| IaC | Terraform | Reproducible cloud infrastructure |
-| Cloud | AWS | RDS, S3, ECS/EC2, IAM |
-
----
-
-## Project Structure
-
-```
-production-rag-platform/
-├── apps/
-│   ├── api/              ← FastAPI application
-│   └── web/              ← Next.js frontend (Phase 35)
-├── services/
-│   ├── ingestion/        ← Document parsing and chunking logic
-│   ├── retrieval/        ← Hybrid search and reranking
-│   ├── evaluation/       ← Retrieval/generation metrics
-│   └── worker/           ← Async ingestion worker process
-├── packages/
-│   ├── rag/              ← Core RAG pipeline (chunking, embedding, generation)
-│   ├── embeddings/       ← Embedding provider abstraction
-│   ├── llm/              ← LLM provider abstraction
-│   ├── database/         ← SQLAlchemy models, repositories, migrations
-│   └── observability/    ← OpenTelemetry, Prometheus, structured logging
-├── infrastructure/
-│   ├── docker/           ← Docker Compose + config files
-│   ├── terraform/        ← AWS infrastructure as code
-│   └── kubernetes/       ← K8s manifests (Phase 30 if justified)
-├── evaluations/
-│   ├── datasets/         ← Evaluation question sets
-│   ├── experiments/      ← Experiment configuration and results
-│   └── benchmarks/       ← Benchmark reports
-├── tests/
-│   ├── unit/             ← Fast, no external dependencies
-│   ├── integration/      ← Requires DB + Redis
-│   ├── security/         ← Tenant isolation, RBAC, prompt injection
-│   └── rag/              ← RAG quality assertions
-├── docs/
-│   ├── adr/              ← Architecture Decision Records
-│   ├── architecture/     ← System diagrams
-│   ├── threat-model/     ← Security threat model
-│   └── runbooks/         ← Operational procedures
-└── .github/
-    └── workflows/        ← CI/CD pipelines
-```
-
----
-
-## Quick Start (Local Development)
+## 🚀 Getting Started
 
 ### Prerequisites
 - Python 3.12+
-- Docker Desktop
-- Git
+- Docker & Docker Compose
+- A Google Gemini API Key
 
-### Setup
-
+### 1. Clone & Setup Environment
 ```bash
-# 1. Clone the repo
 git clone <your-repo-url>
 cd production-rag-platform
 
-# 2. Install Python dependencies
-make install
+# Create and activate a virtual environment
+python -m venv .venv
+source .venv/Scripts/activate  # Windows
+# source .venv/bin/activate    # Mac/Linux
 
-# 3. Install pre-commit hooks (runs quality checks before every commit)
-make hooks
-
-# 4. Copy environment template and fill in your API keys
-cp .env.example .env
-# Edit .env — add your OPENAI_API_KEY at minimum
-
-# 5. Start local infrastructure
-make infra-up
-
-# 6. Apply database migrations
-make migrate
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-### Services after `make infra-up`
+### 2. Configure Environment Variables
+Create a `.env` file in the root directory and add your Gemini API Key:
+```env
+GEMINI_API_KEY=your_google_gemini_api_key_here
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/rag_db
+```
 
-| Service | URL | Credentials |
-|---|---|---|
-| PostgreSQL | `localhost:5432` | `rag_user` / `rag_password` |
-| Redis | `localhost:6379` | — |
-| MinIO (S3) UI | http://localhost:9001 | `minioadmin` / `minioadmin` |
-| Prometheus | http://localhost:9090 | — |
-| Grafana | http://localhost:3001 | `admin` / `admin` |
-| Jaeger (Traces) | http://localhost:16686 | — |
+### 3. Start Infrastructure & Migrate Database
+```bash
+# Start PostgreSQL and Redis in the background
+docker-compose up -d
 
----
+# Run Alembic migrations to create the pgvector tables
+alembic upgrade head
+```
 
-## Development Phases
-
-| Phase | Focus | Status |
-|---|---|---|
-| 0 | Foundation & Environment | ✅ Complete |
-| 1 | RAG Core (Prototype) | 🔲 Next |
-| 2 | Data Layer (PostgreSQL + pgvector) | 🔲 |
-| 3 | API Layer (FastAPI) | 🔲 |
-| 4 | Async Ingestion Pipeline | 🔲 |
-| 5 | Hybrid Retrieval + Reranking | 🔲 |
-| 6 | Evaluation Framework | 🔲 |
-| 7 | Security & Multi-Tenancy | 🔲 |
-| 8 | Observability | 🔲 |
-| 9 | Reliability Engineering | 🔲 |
-| 10 | Cloud & DevOps | 🔲 |
-| 11 | Performance & Cost | 🔲 |
-| 12 | Portfolio Finalization | 🔲 |
+### 4. Run the API Server
+```bash
+# Start the FastAPI server in development mode
+fastapi dev apps/api/main.py
+```
+Your API will now be available at: **http://127.0.0.1:8000**
+Swagger Interactive Docs: **http://127.0.0.1:8000/docs**
 
 ---
 
-## Engineering Principles
+## 📡 API Endpoints
 
-1. **Understand before using** — explain WHY before HOW
-2. **Simplicity before complexity** — add infrastructure only when requirements justify it
-3. **Measure before optimizing** — profile before changing performance-critical code
-4. **Design for failure** — every external call has timeouts, retries, and fallbacks
-5. **Security is structural** — multi-tenancy and RBAC are core invariants, not add-ons
-6. **Evaluation is engineering** — retrieval and generation quality are measured with metrics
+### `POST /ingest/`
+Upload and vectorize a document.
+```json
+{
+  "filename": "company-policy.txt",
+  "content": "Employees get 20 days of paid time off per year."
+}
+```
+
+### `POST /retrieve/`
+Perform a vector similarity search across all ingested documents.
+```json
+{
+  "query": "How many days off do I get?",
+  "top_k": 3
+}
+```
+
+### `POST /chat/stream`
+Chat with the AI using your ingested documents as context (Streams response).
+```bash
+curl -N -X 'POST' \
+  'http://127.0.0.1:8000/chat/stream' \
+  -H 'Content-Type: application/json' \
+  -d '{ "query": "How many days off do I get?" }'
+```
 
 ---
 
-## Limitations (Honest Assessment)
+## 📁 Directory Structure
 
-> *"Do not claim million-user scale simply because the architecture could theoretically scale."*
-
-- **Scale**: Designed and tested for development and demo workloads. Production sizing requires load testing.
-- **LLM cost**: Token costs scale linearly. Cost per query depends on document size and model chosen.
-- **Evaluation dataset**: Synthetic/manually curated. Real-world performance may differ.
-- **Reranker**: Uses external API (Cohere). For low-latency production, a local cross-encoder would be needed.
-
----
-
-*Built as an AI/ML engineering portfolio project demonstrating end-to-end AI systems engineering.*
+```text
+production-rag-platform/
+├── apps/
+│   └── api/                # FastAPI Application (Routers, Schemas, Main)
+├── packages/
+│   ├── database/           # SQLAlchemy Models & Alembic Migrations
+│   ├── embeddings/         # Gemini Vector Embedding Logic
+│   └── llm/                # Gemini Text Generation Logic
+├── services/
+│   ├── ingestion/          # Document Chunking & Saving Logic
+│   ├── retrieval/          # pgvector Similarity Search Logic
+│   └── chat/               # RAG Orchestration & Streaming
+├── docs/                   # Architecture Decisions (ADRs) & Progress
+├── docker-compose.yml      # Local Infrastructure
+├── alembic.ini             # Migration Config
+└── requirements.txt        # Python Dependencies
+```
